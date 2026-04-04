@@ -13,8 +13,29 @@ export interface User {
   updatedAt: string;
 }
 
+export interface AccessRequest {
+  _id: string;
+  user: User;
+  requestedRole: UserRole;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AuthUser extends User {
   token: string;
+}
+
+export interface AuditLog {
+  _id: string;
+  userId: User;
+  action: string;
+  entity: string;
+  entityId?: string;
+  details: string;
+  ipAddress: string;
+  createdAt: string;
 }
 
 // ─── Financial Record Types ───────────────────────────────────────────────────

@@ -13,6 +13,8 @@ const authRoutes = require('./src/routes/auth.routes');
 const userRoutes = require('./src/routes/user.routes');
 const recordRoutes = require('./src/routes/record.routes');
 const dashboardRoutes = require('./src/routes/dashboard.routes');
+const accessRequestRoutes = require('./src/routes/accessRequest.routes');
+const auditRoutes = require('./src/routes/audit.routes');
 const { errorHandler } = require('./src/middleware/errorHandler');
 const { apiLimiter } = require('./src/middleware/rateLimiter');
 const { setupSwagger } = require('./src/utils/swagger');
@@ -36,6 +38,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/records', recordRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/access-request', accessRequestRoutes);
+app.use('/api/audit-logs', auditRoutes);
 
 // ─── Swagger API Docs ──────────────────────────────────────────────────────────
 setupSwagger(app);

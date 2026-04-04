@@ -7,6 +7,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Plus, Search, Pencil, UserX } from 'lucide-react';
 import { userAPI } from '../services/api';
 import UserModal from '../components/ui/UserModal';
+import ConfirmModal from '../components/ui/ConfirmModal';
 import type { User, UserFilters } from '../types';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -24,6 +25,15 @@ const UsersPage = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editUser, setEditUser] = useState<User | null>(null);
 
+  // Confirm Modal State
+  const [confirmState, setConfirmState] = useState<{
+    open: boolean;
+    user: User | null;
+  }>({
+    open: false,
+    user: null,
+  });
+
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
@@ -35,9 +45,16 @@ const UsersPage = () => {
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
-  const handleDeactivate = async (u: User) => {
+  const handleDeactivate = (u: User) => {
     if (u._id === currentUser?._id) return toast.error('Cannot deactivate yourself');
-    if (!window.confirm(`Deactivate ${u.name}?`)) return;
+    setConfirmState({ open: true, user: u });
+  };
+
+  const executeDeactivate = async () => {
+    const u = confirmState.user;
+    if (!u) return;
+    
+    setConfirmState({ open: false, user: null });
     try {
       await userAPI.deactivate(u._id);
       toast.success(`${u.name} deactivated`);
@@ -176,6 +193,17 @@ const UsersPage = () => {
 
       {modalOpen && (
         <UserModal user={editUser} onClose={() => setModalOpen(false)} onSuccess={fetchUsers} />
+      )}
+
+      {confirmState.open && confirmState.user && (
+        <ConfirmModal
+          title="Deactivate User"
+          message={`Are you sure you want to deactivate ${confirmState.user.name}? They will no longer be able to log in.`}
+          confirmText="Deactivate"
+          type="danger"
+          onConfirm={executeDeactivate}
+          onCancel={() => setConfirmState({ open: false, user: null })}
+        />
       )}
     </div>
   );

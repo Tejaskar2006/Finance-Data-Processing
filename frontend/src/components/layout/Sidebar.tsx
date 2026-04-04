@@ -8,10 +8,12 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, FileText, Users, LogOut,
-  TrendingUp, Settings,
+  TrendingUp, ShieldPlus, History,
 } from 'lucide-react';
+import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
+import RequestAccessModal from '../ui/RequestAccessModal';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -21,6 +23,8 @@ interface SidebarProps {
 const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const { user, logout, hasRole } = useAuth();
   const navigate = useNavigate();
+
+  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -109,19 +113,44 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
               <Users className="nav-icon" size={18} />
               Users
             </NavLink>
+            <NavLink
+              to="/access-requests"
+              onClick={onClose}
+              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            >
+              <ShieldPlus className="nav-icon" size={18} />
+              Access Requests
+            </NavLink>
+            <NavLink
+              to="/audit-logs"
+              onClick={onClose}
+              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            >
+              <History className="nav-icon" size={18} />
+              Audit Logs
+            </NavLink>
           </>
         )}
       </nav>
 
       {/* User Footer */}
       <div className="sidebar-footer">
-        <div className="user-card">
+        <div className="user-card" style={{ marginBottom: '0.75rem' }}>
           <div className="user-avatar">{initials}</div>
           <div className="user-info">
             <div className="user-name">{user?.name}</div>
             <span className={`role-badge ${user?.role}`}>{user?.role}</span>
           </div>
         </div>
+        {!hasRole('Admin') && (
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => setIsRequestModalOpen(true)}
+            style={{ width: '100%', marginBottom: '0.5rem', justifyContent: 'center' }}
+          >
+            <ShieldPlus size={15} /> Request Upgrade
+          </button>
+        )}
         <button
           className="btn btn-ghost btn-sm"
           onClick={handleLogout}
@@ -131,6 +160,10 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         </button>
       </div>
     </aside>
+      
+      {isRequestModalOpen && (
+        <RequestAccessModal onClose={() => setIsRequestModalOpen(false)} />
+      )}
     </>
   );
 };

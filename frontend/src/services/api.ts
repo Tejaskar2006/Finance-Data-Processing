@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 import type {
   User, FinancialRecord, DashboardData,
   ApiResponse, PaginatedResponse,
-  CreateRecordPayload, RecordFilters, UserFilters
+  CreateRecordPayload, RecordFilters, UserFilters, AccessRequest, AuditLog
 } from '../types';
 
 const api = axios.create({
@@ -107,6 +107,27 @@ export const recordAPI = {
 export const dashboardAPI = {
   get: () =>
     api.get<ApiResponse<DashboardData>>('/dashboard'),
+};
+
+// ─── Access Request API ───────────────────────────────────────────────────────
+export const accessAPI = {
+  create: (data: { requestedRole: string; reason: string }) =>
+    api.post<ApiResponse<AccessRequest>>('/access-request', data),
+
+  getAll: () =>
+    api.get<ApiResponse<AccessRequest[]> & { count: number }>('/access-request'),
+
+  approve: (id: string) =>
+    api.patch<ApiResponse<AccessRequest>>(`/access-request/${id}/approve`),
+
+  reject: (id: string) =>
+    api.patch<ApiResponse<AccessRequest>>(`/access-request/${id}/reject`),
+};
+
+// ─── Audit Log API ───────────────────────────────────────────────────────────
+export const auditAPI = {
+  getAll: (params?: { userId?: string; action?: string; startDate?: string; endDate?: string; page?: number; limit?: number }) =>
+    api.get<PaginatedResponse<AuditLog>>('/audit-logs', { params }),
 };
 
 export default api;

@@ -7,6 +7,7 @@
  */
 const FinancialRecord = require('../models/FinancialRecord');
 const { AppError } = require('../middleware/errorHandler');
+const { logAction } = require('../services/audit.service');
 
 // ─── GET /api/records ─────────────────────────────────────────────────────────
 const getRecords = async (req, res, next) => {
@@ -122,6 +123,15 @@ const createRecord = async (req, res, next) => {
       message: 'Financial record created',
       data: record,
     });
+
+    // Log the action
+    logAction({
+      req,
+      action: 'CREATE_RECORD',
+      entity: 'FinancialRecord',
+      entityId: record._id,
+      details: `${record.type.toUpperCase()}: ${record.category} - Amount: ${record.amount}`,
+    });
   } catch (err) {
     next(err);
   }
@@ -164,6 +174,15 @@ const updateRecord = async (req, res, next) => {
       success: true,
       message: 'Record updated successfully',
       data: record,
+    });
+
+    // Log the action
+    logAction({
+      req,
+      action: 'UPDATE_RECORD',
+      entity: 'FinancialRecord',
+      entityId: record._id,
+      details: `Updated record: ${record.category} - New Amount: ${record.amount}`,
     });
   } catch (err) {
     next(err);
@@ -222,6 +241,15 @@ const deleteRecord = async (req, res, next) => {
       success: true,
       message: 'Record deleted successfully (soft delete)',
     });
+
+    // Log the action
+    logAction({
+      req,
+      action: 'DELETE_RECORD',
+      entity: 'FinancialRecord',
+      entityId: req.params.id,
+      details: `Record moved to trash: ${req.params.id}`,
+    });
   } catch (err) {
     next(err);
   }
@@ -246,6 +274,15 @@ const restoreRecord = async (req, res, next) => {
       success: true,
       message: 'Record restored successfully',
       data: record,
+    });
+
+    // Log the action
+    logAction({
+      req,
+      action: 'RESTORE_RECORD',
+      entity: 'FinancialRecord',
+      entityId: record._id,
+      details: `Record restored from trash: ${record._id}`,
     });
   } catch (err) {
     next(err);

@@ -5,6 +5,7 @@
  */
 const User = require('../models/User');
 const { AppError } = require('../middleware/errorHandler');
+const { logAction } = require('../services/audit.service');
 
 // ─── GET /api/users — Get all users (paginated) ───────────────────────────────
 const getAllUsers = async (req, res, next) => {
@@ -71,6 +72,15 @@ const createUser = async (req, res, next) => {
       message: 'User created successfully',
       data: user.toSafeObject(),
     });
+
+    // Log the action
+    logAction({
+      req,
+      action: 'CREATE_USER',
+      entity: 'User',
+      entityId: user._id,
+      details: `Admin created user: ${user.email} with role ${user.role}`,
+    });
   } catch (err) {
     next(err);
   }
@@ -101,6 +111,15 @@ const updateUser = async (req, res, next) => {
       message: 'User updated successfully',
       data: user.toSafeObject(),
     });
+
+    // Log the action
+    logAction({
+      req,
+      action: req.body.role ? 'ROLE_CHANGE' : 'UPDATE_USER',
+      entity: 'User',
+      entityId: user._id,
+      details: `Admin updated user ${user.email}. Role change: ${!!req.body.role}. New status: ${user.status}`,
+    });
   } catch (err) {
     next(err);
   }
@@ -125,6 +144,15 @@ const deactivateUser = async (req, res, next) => {
       success: true,
       message: 'User deactivated successfully',
       data: user.toSafeObject(),
+    });
+
+    // Log the action
+    logAction({
+      req,
+      action: 'DEACTIVATE_USER',
+      entity: 'User',
+      entityId: user._id,
+      details: `Admin deactivated user: ${user.email}`,
     });
   } catch (err) {
     next(err);

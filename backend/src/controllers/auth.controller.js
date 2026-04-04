@@ -6,6 +6,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { AppError } = require('../middleware/errorHandler');
+const { logAction } = require('../services/audit.service');
 
 // ─── Helper: Sign and return a JWT for a user ─────────────────────────────────
 const signToken = (user) => {
@@ -44,6 +45,16 @@ const register = async (req, res, next) => {
       token,
       user: newUser.toSafeObject(),
     });
+
+    // Log the registration
+    logAction({
+      req,
+      userId: newUser._id,
+      action: 'CREATE_USER',
+      entity: 'User',
+      entityId: newUser._id,
+      details: `New user registered via public form: ${newUser.email}`,
+    });
   } catch (err) {
     next(err);
   }
@@ -76,6 +87,16 @@ const login = async (req, res, next) => {
       message: 'Login successful',
       token,
       user: user.toSafeObject(),
+    });
+
+    // Log the successful login
+    logAction({
+      req,
+      userId: user._id,
+      action: 'LOGIN',
+      entity: 'User',
+      entityId: user._id,
+      details: `User logged in: ${user.email}`,
     });
   } catch (err) {
     next(err);

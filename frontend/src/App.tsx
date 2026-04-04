@@ -17,6 +17,8 @@ import DashboardPage from './pages/DashboardPage';
 import RecordsPage from './pages/RecordsPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import UsersPage from './pages/UsersPage';
+import AccessRequestsPage from './pages/AccessRequestsPage';
+import AuditLogsPage from './pages/AuditLogsPage';
 import LandingPage from './pages/LandingPage';
 
 // Layout wrapper for authenticated pages (includes Sidebar)
@@ -96,12 +98,24 @@ function App() {
               />
             </Route>
 
-            {/* Users — Admin only */}
+            {/* Users & Access Requests — Admin only */}
             <Route element={<ProtectedRoute allowedRoles={['Admin']} />}>
               <Route
                 path="/users"
                 element={
                   <AppLayout><UsersPage /></AppLayout>
+                }
+              />
+              <Route
+                path="/access-requests"
+                element={
+                  <AppLayout><AccessRequestsPage /></AppLayout>
+                }
+              />
+              <Route
+                path="/audit-logs"
+                element={
+                  <AppLayout><AuditLogsPage /></AppLayout>
                 }
               />
             </Route>
