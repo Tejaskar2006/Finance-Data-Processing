@@ -27,10 +27,13 @@ exports.createRequest = async (req, res, next) => {
       reason
     });
 
+    // Populate before sending so both the HTTP response and WS emit have full user data
+    await request.populate('user', 'name email role');
+
     res.status(201).json({ success: true, data: request });
 
     // Notify all connected admins of the new request in real-time
-    emitToAdmins('access_request:new', { request: await request.populate('user', 'name email role') });
+    emitToAdmins('access_request:new', { request });
 
     // Log the action
     logAction({

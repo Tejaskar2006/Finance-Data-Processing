@@ -1,8 +1,11 @@
 /**
  * useSocket — React hook for Socket.IO
  * ─────────────────────────────────────────────────────────────────────────────
- * Connects the singleton socket when a token is available and cleans it up
- * when the component unmounts or the token is cleared.
+ * Returns the singleton socket instance and triggers a re-render once the
+ * socket object exists (so dependent effects actually fire).
+ *
+ * Key fix: uses useState instead of useRef so consumers re-render when the
+ * socket becomes available, making socket-dependent useEffects work correctly.
  *
  * Usage (in a page/component):
  *   const socket = useSocket(token);
@@ -12,24 +15,25 @@
  *     return () => { socket.off('some_event', handler); };
  *   }, [socket]);
  */
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import type { Socket } from 'socket.io-client';
 import { getSocket } from '../services/socket';
 
 export const useSocket = (token: string | null): Socket | null => {
-  const socketRef = useRef<Socket | null>(null);
+  const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
-    if (!token) return;
+    if (!token) {
+      setSocket(null);
+      return;
+    }
 
     const s = getSocket(token);
-    socketRef.current = s;
+    setSocket(s);
 
-    return () => {
-      // Individual hook instances do NOT disconnect the singleton —
-      // that is only done explicitly on logout via disconnectSocket().
-    };
+    // Individual hook instances do NOT disconnect the singleton.
+    // The socket lifecycle (disconnect on logout) is managed by AuthContext.
   }, [token]);
 
-  return token ? socketRef.current : null;
+  return socket;
 };

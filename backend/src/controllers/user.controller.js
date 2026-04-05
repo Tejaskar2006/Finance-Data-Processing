@@ -6,6 +6,7 @@
 const User = require('../models/User');
 const { AppError } = require('../middleware/errorHandler');
 const { logAction } = require('../services/audit.service');
+const { emitToUser } = require('../services/websocket.service');
 
 // ─── GET /api/users — Get all users (paginated) ───────────────────────────────
 const getAllUsers = async (req, res, next) => {
@@ -94,6 +95,11 @@ const updateUser = async (req, res, next) => {
       return next(new AppError('You cannot deactivate your own account', 400));
     }
 
+    // Capture the old role before the update so we can detect changes
+    const existingUser = await User.findById(req.params.id).select('role');
+    if (!existingUser) return next(new AppError('User not found', 404));
+    const previousRole = existingUser.role;
+
     const updateFields = {};
     if (req.body.role) updateFields.role = req.body.role;
     if (req.body.status) updateFields.status = req.body.status;
@@ -111,6 +117,13 @@ const updateUser = async (req, res, next) => {
       message: 'User updated successfully',
       data: user.toSafeObject(),
     });
+
+    // If the role actually changed, notify the user in real-time.
+    // They will see a toast and be automatically logged out to re-authenticate
+    // with a fresh JWT that reflects their new role.
+    if (req.body.role && req.body.role !== previousRole) {
+      emitToUser(String(user._id), 'role:updated', { newRole: user.role });
+    }
 
     // Log the action
     logAction({
