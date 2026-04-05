@@ -3,11 +3,13 @@
  * Configures Express, connects to MongoDB, mounts all routers
  */
 require('dotenv').config();
+const http = require('http');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const mongoose = require('mongoose');
 const morgan = require('morgan');
+const { initWebSocket } = require('./src/services/websocket.service');
 
 const authRoutes = require('./src/routes/auth.routes');
 const userRoutes = require('./src/routes/user.routes');
@@ -20,6 +22,7 @@ const { apiLimiter } = require('./src/middleware/rateLimiter');
 const { setupSwagger } = require('./src/utils/swagger');
 
 const app = express();
+const server = http.createServer(app);
 
 // ─── Security & Parsing Middleware ─────────────────────────────────────────────
 app.use(helmet()); // Sets security-related HTTP headers
@@ -60,11 +63,12 @@ mongoose
   .connect(process.env.MONGODB_URI)
   .then(() => {
     console.log('✅ MongoDB connected successfully');
-    app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+    initWebSocket(server);
+    server.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
   })
   .catch((err) => {
     console.error('❌ MongoDB connection error:', err.message);
     process.exit(1);
   });
 
-module.exports = app;
+module.exports = { app, server };

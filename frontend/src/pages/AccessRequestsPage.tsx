@@ -5,8 +5,12 @@ import toast from 'react-hot-toast';
 import { accessAPI } from '../services/api';
 import type { AccessRequest } from '../types';
 import ConfirmModal from '../components/ui/ConfirmModal';
+import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../hooks/useSocket';
 
 const AccessRequestsPage = () => {
+  const { token } = useAuth();
+  const socket = useSocket(token);
   const [requests, setRequests] = useState<AccessRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
@@ -44,6 +48,22 @@ const AccessRequestsPage = () => {
   useEffect(() => {
     fetchRequests();
   }, [fetchRequests]);
+
+  // ── Real-time: listen for new requests pushed from the server ────────────────
+  useEffect(() => {
+    if (!socket) return;
+
+    const onNewRequest = () => {
+      // Re-fetch the full list to get the populated user data
+      fetchRequests();
+      toast.success('📥 New role upgrade request received!', { duration: 4000 });
+    };
+
+    socket.on('access_request:new', onNewRequest);
+    return () => {
+      socket.off('access_request:new', onNewRequest);
+    };
+  }, [socket, fetchRequests]);
 
   const handleApprove = (id: string) => {
     setConfirmState({

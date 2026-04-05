@@ -1,6 +1,7 @@
 const AccessRequest = require('../models/AccessRequest');
 const User = require('../models/User');
 const { logAction } = require('../services/audit.service');
+const { emitToUser, emitToAdmins } = require('../services/websocket.service');
 
 exports.createRequest = async (req, res, next) => {
   try {
@@ -27,6 +28,9 @@ exports.createRequest = async (req, res, next) => {
     });
 
     res.status(201).json({ success: true, data: request });
+
+    // Notify all connected admins of the new request in real-time
+    emitToAdmins('access_request:new', { request: await request.populate('user', 'name email role') });
 
     // Log the action
     logAction({
@@ -88,6 +92,9 @@ exports.approveRequest = async (req, res, next) => {
 
     res.status(200).json({ success: true, message: 'Request approved successfully', data: request });
 
+    // Notify the affected user of their new role in real-time
+    emitToUser(String(user._id), 'role:updated', { newRole: requestedRole });
+
     // 5. Log the action
     logAction({
       req,
@@ -114,6 +121,11 @@ exports.rejectRequest = async (req, res, next) => {
     await request.save();
 
     res.status(200).json({ success: true, message: 'Request rejected', data: request });
+
+    // Notify the affected user of the rejection in real-time
+    emitToUser(String(request.user), 'access_request:rejected', {
+      message: 'Your role upgrade request has been rejected by an Admin.',
+    });
 
     // Log the action
     logAction({
